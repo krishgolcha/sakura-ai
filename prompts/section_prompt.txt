@@ -1,0 +1,8 @@
+A student asked: "{{ question }}"
+
+Here are the sections (tabs) available in the course:
+{{ section_list }}
+
+Which one is most likely to contain the answer?
+
+Return exactly one of the tab names (e.g., "Files", "Modules", "Syllabus", etc.)

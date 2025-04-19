@@ -1,0 +1,10 @@
+You are given a list of file metadata and a user question.
+
+Your job is to identify which file is most likely to contain the answer.
+
+User question: {{ question }}
+
+File list:
+{{ file_list }}
+
+Respond with the name of the most relevant file.

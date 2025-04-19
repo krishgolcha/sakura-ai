@@ -1,0 +1,116 @@
+[
+  {
+    "id": "home",
+    "html_url": "/courses/52669",
+    "full_url": "https://canvas.illinois.edu/courses/52669",
+    "position": 1,
+    "visibility": "public",
+    "label": "Home",
+    "type": "internal"
+  },
+  {
+    "id": "context_external_tool_15160",
+    "html_url": "/courses/52669/external_tools/15160",
+    "full_url": "https://canvas.illinois.edu/courses/52669/external_tools/15160",
+    "position": 2,
+    "visibility": "public",
+    "label": "iSchool Help",
+    "type": "external",
+    "url": "https://canvas.illinois.edu/api/v1/courses/52669/external_tools/sessionless_launch?id=15160&launch_type=course_navigation"
+  },
+  {
+    "id": "grades",
+    "html_url": "/courses/52669/grades",
+    "full_url": "https://canvas.illinois.edu/courses/52669/grades",
+    "position": 3,
+    "visibility": "public",
+    "label": "Grades",
+    "type": "internal"
+  },
+  {
+    "id": "announcements",
+    "html_url": "/courses/52669/announcements",
+    "full_url": "https://canvas.illinois.edu/courses/52669/announcements",
+    "position": 4,
+    "visibility": "public",
+    "label": "Announcements",
+    "type": "internal"
+  },
+  {
+    "id": "people",
+    "html_url": "/courses/52669/users",
+    "full_url": "https://canvas.illinois.edu/courses/52669/users",
+    "position": 5,
+    "visibility": "public",
+    "label": "People",
+    "type": "internal"
+  },
+  {
+    "id": "context_external_tool_327",
+    "html_url": "/courses/52669/external_tools/327",
+    "full_url": "https://canvas.illinois.edu/courses/52669/external_tools/327",
+    "position": 6,
+    "visibility": "public",
+    "label": "Zoom Meeting",
+    "type": "external",
+    "url": "https://canvas.illinois.edu/api/v1/courses/52669/external_tools/sessionless_launch?id=327&launch_type=course_navigation"
+  },
+  {
+    "id": "modules",
+    "html_url": "/courses/52669/modules",
+    "full_url": "https://canvas.illinois.edu/courses/52669/modules",
+    "position": 7,
+    "visibility": "public",
+    "label": "Modules",
+    "type": "internal"
+  },
+  {
+    "id": "assignments",
+    "html_url": "/courses/52669/assignments",
+    "full_url": "https://canvas.illinois.edu/courses/52669/assignments",
+    "position": 8,
+    "visibility": "public",
+    "label": "Assignments",
+    "type": "internal"
+  },
+  {
+    "id": "context_external_tool_6073",
+    "html_url": "/courses/52669/external_tools/6073",
+    "full_url": "https://canvas.illinois.edu/courses/52669/external_tools/6073",
+    "position": 9,
+    "visibility": "public",
+    "label": "Office 365",
+    "type": "external",
+    "url": "https://canvas.illinois.edu/api/v1/courses/52669/external_tools/sessionless_launch?id=6073&launch_type=course_navigation"
+  },
+  {
+    "id": "context_external_tool_15159",
+    "html_url": "/courses/52669/external_tools/15159",
+    "full_url": "https://canvas.illinois.edu/courses/52669/external_tools/15159",
+    "position": 10,
+    "visibility": "public",
+    "label": "iSchool Help",
+    "type": "external",
+    "url": "https://canvas.illinois.edu/api/v1/courses/52669/external_tools/sessionless_launch?id=15159&launch_type=course_navigation"
+  },
+  {
+    "id": "context_external_tool_7515",
+    "html_url": "/courses/52669/external_tools/7515",
+    "full_url": "https://canvas.illinois.edu/courses/52669/external_tools/7515",
+    "position": 11,
+    "visibility": "public",
+    "label": "Course Gallery - Kaltura at Illinois",
+    "type": "external",
+    "url": "https://canvas.illinois.edu/api/v1/courses/52669/external_tools/sessionless_launch?id=7515&launch_type=course_navigation"
+  },
+  {
+    "id": "context_external_tool_15158",
+    "html_url": "/courses/52669/external_tools/15158",
+    "full_url": "https://canvas.illinois.edu/courses/52669/external_tools/15158",
+    "position": 12,
+    "visibility": "public",
+    "label": "iSchool Connect",
+    "type": "external",
+    "url": "https://canvas.illinois.edu/api/v1/courses/52669/external_tools/sessionless_launch?id=15158&launch_type=course_navigation"
+  }
+]

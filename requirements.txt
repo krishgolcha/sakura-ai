@@ -1,0 +1,7 @@
+faiss-cpu
+sentence-transformers
+PyPDF2
+python-docx
+beautifulsoup4
+openai
+tqdm
