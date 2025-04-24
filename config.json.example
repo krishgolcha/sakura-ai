@@ -1,0 +1,5 @@
+{
+    "canvas_api_token": "your_canvas_token_here",
+    "google_api_key": "your_google_api_key_here",
+    "canvas_api_url": "https://canvas.illinois.edu/api/v1"
+} 
