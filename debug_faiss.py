@@ -1,4 +1,4 @@
-from retriever import load_faiss_index
+from processing.retriever import load_faiss_index
 import sys
 
 if len(sys.argv) < 3:
