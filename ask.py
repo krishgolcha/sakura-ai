@@ -1,5 +1,9 @@
 # ask.py
-
+from dotenv import load_dotenv
+load_dotenv()  # This will load variables from .env into the environment
+import os
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+CANVAS_API_TOKEN = os.getenv("CANVAS_API_TOKEN")
 import argparse
 import traceback
 import os
@@ -17,7 +21,8 @@ from canvas_api.fetch_section_data import (
     embed_course_content,
     ensure_embedding_dirs,
     fetch_course_users,
-    get_available_tabs
+    get_available_tabs,
+    is_course_embedded
 )
 from canvas_api.auth import get_headers
 import requests
@@ -32,6 +37,7 @@ from cachetools import TTLCache
 from utils.cache import get_cached_content
 from processing.gemini_client import init_gemini, get_gemini_response
 from dateutil import parser
+import threading
 
 # Configure logging
 logging.basicConfig(
@@ -111,24 +117,16 @@ def check_setup() -> tuple[bool, str]:
     return True, "Setup OK"
 
 def list_courses():
-    """List all available courses."""
+    """Return all available courses as a list of dicts."""
     try:
         courses = get_all_courses()
         if not courses:
-            print("\nNo courses found. Please check your Canvas API token.")
-            return
-        
-        print("\nAvailable courses:")
-        print("-" * 80)
-        for course in courses:
-            if isinstance(course, dict) and 'name' in course:
-                print(f"• {course['name']} (ID: {course['id']})")
-        print("-" * 80)
-        return
-        
+            return []
+        # Return the list of course dicts directly
+        return courses
     except Exception as e:
         print(f"\nError listing courses: {str(e)}")
-        return
+        return []
 
 def setup_argparse() -> argparse.ArgumentParser:
     """Set up command line argument parsing."""
@@ -252,7 +250,7 @@ Task:
         print(f"Error in get_course_id: {str(e)}")
         return None
 
-def get_relevant_tabs(course_id: int, question: str) -> List[str]:
+def get_relevant_tabs(course_id: int, question: str, debug: bool = False) -> List[str]:
     """Get relevant tabs for a question using Gemini with enhanced fallback mechanisms"""
     try:
         # Get available tabs
@@ -344,17 +342,13 @@ Return ONLY the tab names, no other text.
         
         # Ensure we return exactly 3 tabs if possible
         result = valid_ranked_tabs[:3]
-        print(f"\nRanked tabs: {', '.join(result)}")
-        
-        if len(result) < 3 and len(tabs) >= 3:
-            # Add any remaining tabs to reach 3
-            remaining_tabs = [tab for tab in tabs if tab not in result]
-            result.extend(remaining_tabs[:3 - len(result)])
-        
+        if debug:
+            print(f"Ranked tabs: {', '.join(result)}")
         return result
         
     except Exception as e:
-        print(f"Error in get_relevant_tabs: {str(e)}")
+        if debug:
+            print(f"Error in get_relevant_tabs: {str(e)}")
         # Return at least People tab plus any other available tabs
         default_result = ["People"] if "People" in tabs else []
         other_tabs = [tab for tab in tabs if tab != "People"]
@@ -436,51 +430,53 @@ def format_content_for_prompt(content: Dict[str, Any]) -> str:
             
     return "\n\n".join(formatted_sections)
 
-def get_answer(course_id: str, question: str) -> str:
-    """Get an answer to a question about a course."""
+def get_answer(course_id: str, question: str, debug: bool = False) -> str:
+    """Get an answer to a question about a course, acting as a Canvas agent and using only the Canvas data provided."""
     try:
-        # Get relevant tabs based on the question
-        relevant_tabs = get_relevant_tabs(course_id, question)
-        
-        # Initialize data collection
+        relevant_tabs = get_relevant_tabs(course_id, question, debug=debug)
         data_for_prompt = {
             "question": question,
             "content": {},
             "tabs_checked": relevant_tabs
         }
-        
-        # Get content for each relevant tab
+        succeeded_tabs = []
+        failed_tabs = []
         for tab in relevant_tabs:
-            content = get_section_content(course_id, tab)
-            if content:
-                data_for_prompt["content"][tab] = content
-        
-        # Check if we have sufficient data
+            section = get_section_content(course_id, tab)
+            if not section or (isinstance(section, dict) and ("error" in section or not section.get("content"))):
+                failed_tabs.append(tab)
+                continue
+            succeeded_tabs.append(tab)
+            data_for_prompt["content"][tab] = section.get("content") if isinstance(section, dict) else section
+        if debug:
+            print("[DEBUG] Tab fetch summary:")
+            print(f"- Succeeded: {', '.join(succeeded_tabs) if succeeded_tabs else 'None'}")
+            print(f"- Failed: {', '.join(failed_tabs) if failed_tabs else 'None'}")
         if not data_for_prompt["content"]:
-            return "I couldn't find relevant information to answer your question. Please try rephrasing or asking about a different topic."
-        
-        # Generate the final prompt
+            return "Sorry, I couldn't find any relevant information in the available course tabs to answer your question. Please check if the course content is available or try asking about a different topic."
+        # Use format_content_for_prompt to present the context
+        context = format_content_for_prompt(data_for_prompt["content"])
         prompt = f"""
-Based on the following course information, answer this question: "{question}"
+You are Sakura, an expert agent for the Canvas LMS. You answer student questions using ONLY the course data provided below. Do not make up information or use outside knowledge. If you cannot answer, say so concisely.
 
-Available content from these tabs: {', '.join(data_for_prompt['tabs_checked'])}
+Student Question: "{question}"
 
-{format_content_for_prompt(data_for_prompt['content'])}
+Course Data:
+{context}
 
-Provide a brief, focused answer that includes:
-- Main information requested
-- Any directly relevant links or resources
-- Source tab for each piece of information
-
-Use bullet points and keep the response concise.
+Instructions:
+- Only use facts that are present in the course data above.
+- For each fact, clearly state which tab/section (e.g., Home, Syllabus, Announcements) it came from, at the end of the line.
+- Format in neat manner and provide supporting related information such as links, titles of people, location, etc.if possible.
+- If you cannot answer, reply: "Sorry, I couldn't find an answer in the course data."
+- Do not use bullet points, asterisks, or markdown formatting.
+- Be concise and helpful, like a real Canvas agent.
 """
-        
-        # Get response with lower temperature for more focused answers
-        response = get_gemini_response(prompt, temperature=0.4)
-        return response if response else "I apologize, but I couldn't generate a response. Please try asking your question differently."
-        
+        response = get_gemini_response(prompt, temperature=0.3)
+        return response if response else "Sorry, I couldn't generate a response. Please try asking your question differently."
     except Exception as e:
-        print(f"Error in get_answer: {str(e)}")
+        if debug:
+            print(f"Error in get_answer: {str(e)}")
         return "An error occurred while processing your question. Please try again."
 
 def get_course_and_tabs(question: str, courses: List[Dict[str, Any]]) -> Tuple[Optional[int], List[str]]:
@@ -509,11 +505,37 @@ def get_course_and_tabs(question: str, courses: List[Dict[str, Any]]) -> Tuple[O
         print(f"Error in get_course_and_tabs: {str(e)}")
         return None, []
 
+embedding_thread = None
+embedding_in_progress = False
+
+def auto_embed_all_courses():
+    global embedding_in_progress
+    embedding_in_progress = True
+    courses = get_all_courses()
+    for course in courses:
+        course_id = str(course['id'])
+        if not is_course_embedded(course_id):
+            print(f"[EMBED] Indexing course {course_id} ({course.get('name', '')}) ...")
+            section_data = get_section_data(course_id)
+            for section in section_data.keys():
+                embed_course_content(course_id, section)
+    embedding_in_progress = False
+
 def main():
     """Main function to handle user queries"""
+    global embedding_thread, embedding_in_progress
+    # Start embedding in the background as soon as the agent starts
+    if embedding_thread is None:
+        embedding_thread = threading.Thread(target=auto_embed_all_courses, daemon=True)
+        embedding_thread.start()
     try:
         parser = setup_argparse()
         args = parser.parse_args()
+        # Set debug flag
+        debug = getattr(args, 'debug', False)
+        # Optionally, warn if embedding is still in progress
+        if embedding_in_progress and debug:
+            print("[INFO] Embedding of courses is still in progress. Some queries may be slower or incomplete until embedding finishes.")
         
         # Handle list courses command
         if args.list_courses:
@@ -568,12 +590,10 @@ def main():
                 return 1
             
             # Get the answer using the determined course_id
-            answer = get_answer(str(course_id), query)
+            answer = get_answer(str(course_id), query, debug=debug)
             
             if answer:
-                print("\n" + "=" * 80)
                 print(answer)
-                print("=" * 80 + "\n")
             else:
                 print("\nError: No response received. Please try again with a different query.")
 
